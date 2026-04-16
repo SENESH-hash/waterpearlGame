@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- ── MOBILE-FIRST VIEWPORT ── -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- iOS Web App support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Plant Scout" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#B5E6D0" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <title>Plant Scout 🌿</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ══════════════════════════════════════════
+       TOKENS & RESET
+    ══════════════════════════════════════════ */
+    :root {
+      --mint:      #B5E6D0;
+      --skyblue:   #B5DBE6;
+      --teallight: #B6E6E1;
+      --green:     #B5E6C0;
+      --periwinkle:#B5CCE6;
+      --teal:      #9BE6DE;
+      --ink:       #1e2e28;
+      --cream:     #f4fcf8;
+      --white:     #ffffff;
+      --shadow:    rgba(60,120,90,0.14);
+      --radius:    18px;
+
+      /* Safe-area insets for notched / Dynamic Island phones */
+      --sat: env(safe-area-inset-top,    0px);
+      --sar: env(safe-area-inset-right,  0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left,   0px);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--cream);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      padding-top:   var(--sat);
+      padding-left:  var(--sal);
+      padding-right: var(--sar);
+    }
+
+    /* ── BACKGROUND BLOBS ── */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      top: -15vw; left: -15vw;
+      width: 60vw; height: 60vw;
+      background: radial-gradient(circle, var(--mint) 0%, transparent 70%);
+      opacity: 0.5;
+    }
+    body::after {
+      bottom: -12vw; right: -12vw;
+      width: 55vw; height: 55vw;
+      background: radial-gradient(circle, var(--teal) 0%, transparent 70%);
+      opacity: 0.4;
+    }
+
+    /* ══════════════════════════════════════════
+       SCREENS
+    ══════════════════════════════════════════ */
+    #game-screen {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding-bottom: calc(var(--sab) + 28px);
+    }
+
+    #success-screen {
+      display: none;
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px calc(var(--sab) + 32px);
+      text-align: center;
+    }
+    #success-screen.active { display: flex; }
+
+    /* ══════════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════════ */
+    .header {
+      text-align: center;
+      padding: clamp(20px, 6vw, 36px) 20px 8px;
+    }
+    .header-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+      color: var(--ink);
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(11px, 3.2vw, 14px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 50px;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(30px, 9vw, 48px);
+      color: var(--ink);
+      line-height: 1.05;
+    }
+    .header p {
+      color: #5a7a6a;
+      font-size: clamp(12px, 3.5vw, 15px);
+      font-weight: 700;
+      margin-top: 5px;
+    }
+    .dots-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 10px 0 0;
+    }
+    .dot { width:8px; height:8px; border-radius:50%; }
+    .dot-1{background:var(--mint)}   .dot-2{background:var(--teal)}
+    .dot-3{background:var(--skyblue)}.dot-4{background:var(--green)}
+    .dot-5{background:var(--periwinkle)}
+
+    /* ══════════════════════════════════════════
+       PROGRESS BAR
+    ══════════════════════════════════════════ */
+    .progress-wrap {
+      margin: 16px 16px 0;
+      padding: 14px 18px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 3px 14px var(--shadow);
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: clamp(11px, 3vw, 13px);
+      font-weight: 800;
+      color: #7aaa90;
+      margin-bottom: 7px;
+    }
+    .progress-track {
+      background: rgba(155,230,222,0.3);
+      border-radius: 50px;
+      height: 11px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--teal));
+      border-radius: 50px;
+      transition: width 0.55s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+
+    /* ══════════════════════════════════════════
+       FRUIT GRID — 3 fluid columns
+    ══════════════════════════════════════════ */
+    .fruit-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 2.5vw, 14px);
+      padding: clamp(12px, 3.5vw, 20px) clamp(10px, 3vw, 16px);
+    }
+
+    /* ══════════════════════════════════════════
+       FRUIT CARD
+    ══════════════════════════════════════════ */
+    .fruit-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      animation: cardPop 0.4s cubic-bezier(.4,0,.2,1) both;
+      transition: transform 0.12s;
+    }
+    .fruit-card:active { transform: scale(0.96); }
+    .fruit-card.submitted { outline: 3px solid var(--teal); outline-offset: -2px; }
+
+    .fruit-card:nth-child(1){animation-delay:.03s} .fruit-card:nth-child(2){animation-delay:.06s}
+    .fruit-card:nth-child(3){animation-delay:.09s} .fruit-card:nth-child(4){animation-delay:.12s}
+    .fruit-card:nth-child(5){animation-delay:.15s} .fruit-card:nth-child(6){animation-delay:.18s}
+    .fruit-card:nth-child(7){animation-delay:.21s} .fruit-card:nth-child(8){animation-delay:.24s}
+    .fruit-card:nth-child(9){animation-delay:.27s} .fruit-card:nth-child(10){animation-delay:.30s}
+
+    @keyframes cardPop {
+      from { opacity:0; transform:scale(0.88) translateY(10px); }
+      to   { opacity:1; transform:scale(1)    translateY(0);    }
+    }
+
+    /* ── submitted badge ── */
+    .submitted-badge {
+      display: none;
+      position: absolute;
+      top: 6px; right: 6px;
+      width:  clamp(20px, 5.5vw, 26px);
+      height: clamp(20px, 5.5vw, 26px);
+      background: var(--teal);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(10px, 3vw, 14px);
+      font-weight: 900;
+      z-index: 5;
+      animation: popIn 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .fruit-card.submitted .submitted-badge { display: flex; }
+
+    @keyframes popIn {
+      0%  { transform:scale(0); opacity:0; }
+      70% { transform:scale(1.25); }
+      100%{ transform:scale(1);   opacity:1; }
+    }
+
+    /* ══════════════════════════════════════════
+       FRUIT FRAME — strict 1:1 square
+    ══════════════════════════════════════════ */
+    .fruit-frame {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .fruit-emoji {
+      font-size: clamp(26px, 9.5vw, 52px);
+      z-index: 1;
+      line-height: 1;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,.12));
+      transition: opacity 0.3s;
+      user-select: none;
+    }
+    .fruit-frame img.preview {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 2;
+    }
+
+    .fruit-frame[data-color="mint"]       {background:linear-gradient(145deg,#d6f5e8,#b5e6d0)}
+    .fruit-frame[data-color="skyblue"]    {background:linear-gradient(145deg,#d8eef7,#b5dbe6)}
+    .fruit-frame[data-color="teallight"]  {background:linear-gradient(145deg,#d4f3ef,#b6e6e1)}
+    .fruit-frame[data-color="green"]      {background:linear-gradient(145deg,#d6f5e0,#b5e6c0)}
+    .fruit-frame[data-color="periwinkle"] {background:linear-gradient(145deg,#d8e5f7,#b5cce6)}
+    .fruit-frame[data-color="teal"]       {background:linear-gradient(145deg,#c8f5ef,#9be6de)}
+
+    /* ══════════════════════════════════════════
+       CARD BODY
+    ══════════════════════════════════════════ */
+    .card-body {
+      padding: clamp(6px,2vw,10px) clamp(5px,1.5vw,8px) clamp(8px,2.5vw,12px);
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(5px, 1.5vw, 8px);
+    }
+    .fruit-name {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(10px, 3.2vw, 15px);
+      color: var(--ink);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* ══════════════════════════════════════════
+       BUTTONS  — 44px+ tap targets (Apple HIG)
+    ══════════════════════════════════════════ */
+    .btn-upload, .btn-submit {
+      width: 100%;
+      min-height: clamp(34px, 9vw, 44px);
+      padding: clamp(6px, 1.8vw, 9px) 4px;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(9px, 2.8vw, 13px);
+      font-weight: 800;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: filter 0.12s, transform 0.1s;
+    }
+    .btn-upload {
+      background: linear-gradient(135deg, var(--mint), var(--teallight));
+      color: var(--ink);
+    }
+    .btn-upload:active  { transform: scale(0.94); filter: brightness(0.91); }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--teal), #6dcfc5);
+      color: var(--ink);
+      display: none;
+    }
+    .btn-submit.visible { display: block; animation: fadeUp 0.28s ease; }
+    .btn-submit:active  { transform: scale(0.94); }
+    .btn-submit.done {
+      background: linear-gradient(135deg, #b0e0d8, #d0f0eb);
+      color: #3a6a5a;
+      cursor: default;
+    }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0);   }
+    }
+
+    /* ══════════════════════════════════════════
+       COMPLETE SECTION
+    ══════════════════════════════════════════ */
+    .complete-section {
+      padding: 4px 16px clamp(16px, 5vw, 28px);
+      text-align: center;
+    }
+    .btn-complete {
+      width: 100%;
+      padding: clamp(16px, 4.5vw, 20px) 20px;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, var(--ink) 0%, #3a5a48 100%);
+      color: var(--white);
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(17px, 5.5vw, 22px);
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(30,46,40,0.25);
+      -webkit-appearance: none;
+      appearance: none;
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .btn-complete:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 14px rgba(30,46,40,0.2);
+    }
+    .complete-hint {
+      margin-top: 10px;
+      font-size: clamp(11px, 3vw, 13px);
+      color: #8aaa98;
+      font-weight: 700;
+    }
+
+    /* ══════════════════════════════════════════
+       SUCCESS SCREEN
+    ══════════════════════════════════════════ */
+    .success-leaves {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .leaf {
+      position: absolute;
+      animation: fallLeaf linear infinite;
+      opacity: 0.75;
+      user-select: none;
+    }
+    @keyframes fallLeaf {
+      0%  { transform: translateY(-80px) rotate(0deg);   opacity: .8; }
+      100%{ transform: translateY(110dvh) rotate(400deg); opacity: 0;  }
+    }
+
+    .success-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .success-anim {
+      font-size: clamp(72px, 22vw, 100px);
+      line-height: 1;
+      animation: floatBounce 2.6s ease-in-out infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes floatBounce {
+      0%,100%{ transform: translateY(0)    rotate(-4deg); }
+      50%    { transform: translateY(-18px) rotate(4deg); }
+    }
+
+    .success-card {
+      background: white;
+      border-radius: 26px;
+      padding: clamp(24px,6vw,36px) clamp(20px,5vw,32px);
+      box-shadow: 0 16px 50px rgba(60,120,90,0.18);
+      width: 100%;
+      max-width: 400px;
+    }
+    .success-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(28px, 9vw, 40px);
+      color: var(--ink);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .success-title span {
+      background: linear-gradient(90deg, #3aaa80, #5bc4b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .success-msg {
+      font-size: clamp(13px, 3.8vw, 16px);
+      color: #5a7a6a;
+      font-weight: 700;
+      line-height: 1.65;
+      margin-bottom: 22px;
+    }
+    .success-stats {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .stat-pill {
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+      border-radius: 50px;
+      padding: clamp(8px,2.5vw,11px) clamp(14px,4vw,20px);
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(13px, 4vw, 16px);
+      color: var(--ink);
+    }
+    .btn-restart {
+      width: 100%;
+      padding: clamp(14px,4vw,18px) 20px;
+      border: none;
+      border-radius: 50px;
+      background: var(--ink);
+      color: white;
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(16px, 5vw, 20px);
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: transform 0.12s;
+    }
+    .btn-restart:active { transform: scale(0.97); }
+
+    /* ══════════════════════════════════════════
+       UPLOAD BOTTOM SHEET
+    ══════════════════════════════════════════ */
+    #sheet-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.46);
+      z-index: 800;
+      align-items: flex-end;
+    }
+    #sheet-overlay.open { display: flex; }
+
+    .sheet {
+      width: 100%;
+      background: white;
+      border-radius: 26px 26px 0 0;
+      padding: 22px 20px calc(var(--sab) + 22px);
+      animation: slideUp 0.32s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0);    }
+    }
+
+    .sheet-handle {
+      width: 40px; height: 5px;
+      background: #ddd;
+      border-radius: 50px;
+      margin: 0 auto 16px;
+    }
+    .sheet-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(15px, 4.5vw, 19px);
+      color: var(--ink);
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .sheet-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .sheet-btn {
+      padding: clamp(16px,5vw,20px) 10px;
+      border: 2px solid transparent;
+      border-radius: 18px;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(14px, 4.5vw, 18px);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .sheet-btn:active { background: var(--mint); border-color: var(--teal); }
+    .sheet-btn-icon  { font-size: clamp(28px, 9vw, 38px); }
+
+    .sheet-cancel {
+      width: 100%;
+      padding: clamp(14px, 4.5vw, 18px);
+      border: none;
+      border-radius: 18px;
+      background: #f0f0f0;
+      color: #666;
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(14px, 4.5vw, 18px);
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .sheet-cancel:active { background: #e2e2e2; }
+
+    /* ══════════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════════ */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--sab) + 22px);
+      left: 50%;
+      transform: translateX(-50%) translateY(90px);
+      background: var(--ink);
+      color: white;
+      padding: 13px 24px;
+      border-radius: 50px;
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(12px, 3.5vw, 14px);
+      font-weight: 800;
+      z-index: 900;
+      white-space: nowrap;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      max-width: calc(100vw - 40px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     GAME SCREEN
+═══════════════════════════════════════ -->
+<div id="game-screen">
+
+  <div class="header">
+    <div class="header-badge">🌱 Field Mission</div>
+    <h1>Plant Scout</h1>
+    <p>Photograph 10 tropical fruits</p>
+    <div class="dots-row">
+      <div class="dot dot-1"></div><div class="dot dot-2"></div>
+      <div class="dot dot-3"></div><div class="dot dot-4"></div>
+      <div class="dot dot-5"></div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>🌿 Progress</span>
+      <span id="progress-text">0 / 10 submitted</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="fruit-grid" id="fruit-grid"></div>
+
+  <div class="complete-section">
+    <button class="btn-complete" onclick="completeAndSubmit()">
+      🌿 Complete &amp; Submit
+    </button>
+    <p class="complete-hint">Upload as many or as few as you like!</p>
+  </div>
+
+</div><!-- /game-screen -->
+
+
+<!-- ═══════════════════════════════════════
+     SUCCESS SCREEN
+═══════════════════════════════════════ -->
+<div id="success-screen">
+  <div class="success-leaves" id="leaves-container"></div>
+  <div class="success-inner">
+    <div class="success-anim">🌿</div>
+    <div class="success-card">
+      <div class="success-title">Nature<br><span>Unlocked!</span></div>
+      <p class="success-msg">
+        Your botanical field notes are in!<br>
+        The jungle heard you — and it's impressed. 🍃<br><br>
+        Keep exploring, Scout. Every leaf has a story.
+      </p>
+      <div class="success-stats">
+        <div class="stat-pill" id="stat-submitted">🍎 0 Logged</div>
+        <div class="stat-pill">🏆 Scout Rank</div>
+      </div>
+      <button class="btn-restart" onclick="restartGame()">🔄 Play Again</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     UPLOAD BOTTOM SHEET
+═══════════════════════════════════════ -->
+<div id="sheet-overlay" onclick="sheetOverlayTap(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-fruit-name">Upload Photo</div>
+    <div class="sheet-btns">
+      <button class="sheet-btn" onclick="pickCamera()">
+        <span class="sheet-btn-icon">📷</span>
+        Take Photo
+      </button>
+      <button class="sheet-btn" onclick="pickGallery()">
+        <span class="sheet-btn-icon">🖼️</span>
+        Gallery
+      </button>
+    </div>
+    <button class="sheet-cancel" onclick="closeSheet()">Cancel</button>
+  </div>
+</div>
+
+<!-- Separate file inputs: one forces camera, one allows gallery -->
+<input type="file" id="input-camera"  accept="image/*" capture="environment" onchange="handleFile(event)" style="display:none" />
+<input type="file" id="input-gallery" accept="image/*"                       onchange="handleFile(event)" style="display:none" />
+
+<div id="toast"></div>
+
+
+<script>
+  /* ═══════════════════════════════════
+     DATA
+  ═══════════════════════════════════ */
+  const FRUITS = [
+    { name: 'Mango',      emoji: '🥭', color: 'mint'       },
+    { name: 'Guava',      emoji: '🍈', color: 'green'      },
+    { name: 'Pineapple',  emoji: '🍍', color: 'skyblue'    },
+    { name: 'Rose-Apple', emoji: '🍎', color: 'teallight'  },
+    { name: 'Jackfruit',  emoji: '🟡', color: 'periwinkle' },
+    { name: 'Star Fruit', emoji: '⭐', color: 'teal'       },
+    { name: 'Rambutan',   emoji: '🍓', color: 'mint'       },
+    { name: 'Soursop',    emoji: '🍏', color: 'green'      },
+    { name: 'Cherry',     emoji: '🍒', color: 'skyblue'    },
+    { name: 'Cashew',     emoji: '🌰', color: 'teallight'  },
+  ];
+
+  let submitted   = new Set();
+  let activeIndex = null;
+
+  /* ═══════════════════════════════════
+     BUILD GRID
+  ═══════════════════════════════════ */
+  function buildGrid() {
+    const grid = document.getElementById('fruit-grid');
+    grid.innerHTML = '';
+    FRUITS.forEach((fruit, i) => {
+      const card = document.createElement('div');
+      card.className = 'fruit-card';
+      card.id        = `card-${i}`;
+      card.innerHTML = `
+        <div class="submitted-badge">✓</div>
+        <div class="fruit-frame" data-color="${fruit.color}">
+          <span class="fruit-emoji" id="emoji-${i}">${fruit.emoji}</span>
+          <img class="preview" id="preview-${i}" alt="${fruit.name}" style="display:none" />
+        </div>
+        <div class="card-body">
+          <div class="fruit-name">${fruit.name}</div>
+          <button class="btn-upload" id="upload-btn-${i}" onclick="openSheet(${i})">
+            📷 Upload
+          </button>
+          <button class="btn-submit" id="submit-btn-${i}" onclick="submitFruit(${i})">
+            ✅ Submit
+          </button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  /* ═══════════════════════════════════
+     BOTTOM SHEET
+  ═══════════════════════════════════ */
+  function openSheet(i) {
+    activeIndex = i;
+    document.getElementById('sheet-fruit-name').textContent =
+      '📍 ' + FRUITS[i].name + ' — Upload Photo';
+    document.getElementById('sheet-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet() {
+    document.getElementById('sheet-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function sheetOverlayTap(e) {
+    if (e.target === document.getElementById('sheet-overlay')) closeSheet();
+  }
+
+  function pickCamera() {
+    closeSheet();
+    setTimeout(() => {
+      document.getElementById('input-camera').value = '';
+      document.getElementById('input-camera').click();
+    }, 80);
+  }
+
+  function pickGallery() {
+    closeSheet();
+    setTimeout(() => {
+      document.getElementById('input-gallery').value = '';
+      document.getElementById('input-gallery').click();
+    }, 80);
+  }
+
+  /* ═══════════════════════════════════
+     FILE HANDLER
+  ═══════════════════════════════════ */
+  function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file || activeIndex === null) return;
+    const i = activeIndex;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('preview-' + i);
+      preview.src           = e.target.result;
+      preview.style.display = 'block';
+      document.getElementById('emoji-' + i).style.opacity = '0';
+
+      const sb = document.getElementById('submit-btn-' + i);
+      sb.classList.add('visible');
+      sb.classList.remove('done');
+      sb.disabled    = false;
+      sb.textContent = '✅ Submit';
+
+      showToast('📸 Photo ready — tap Submit!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ═══════════════════════════════════
+     SUBMIT FRUIT
+  ═══════════════════════════════════ */
+  function submitFruit(i) {
+    if (submitted.has(i)) return;
+    submitted.add(i);
+
+    document.getElementById('card-' + i).classList.add('submitted');
+
+    const sb = document.getElementById('submit-btn-' + i);
+    sb.classList.add('done');
+    sb.disabled    = true;
+    sb.textContent = '✔ Submitted';
+
+    document.getElementById('upload-btn-' + i).textContent = '🔄 Re-upload';
+
+    updateProgress();
+    showToast('🌿 ' + FRUITS[i].name + ' logged!');
+  }
+
+  /* ═══════════════════════════════════
+     PROGRESS
+  ═══════════════════════════════════ */
+  function updateProgress() {
+    const n = submitted.size;
+    document.getElementById('progress-text').textContent = n + ' / 10 submitted';
+    document.getElementById('progress-fill').style.width = (n * 10) + '%';
+  }
+
+  /* ═══════════════════════════════════
+     TOAST
+  ═══════════════════════════════════ */
+  var toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+  }
+
+  /* ═══════════════════════════════════
+     COMPLETE & SUBMIT
+  ═══════════════════════════════════ */
+  function completeAndSubmit() {
+    if (submitted.size === 0) {
+      showToast('📷 Upload at least one fruit first!');
+      return;
+    }
+    document.getElementById('game-screen').style.display = 'none';
+    const ss = document.getElementById('success-screen');
+    ss.classList.add('active');
+    document.getElementById('stat-submitted').textContent =
+      '🍎 ' + submitted.size + ' Logged';
+    spawnLeaves();
+    window.scrollTo(0, 0);
+  }
+
+  /* ═══════════════════════════════════
+     RESTART
+  ═══════════════════════════════════ */
+  function restartGame() {
+    submitted.clear();
+    activeIndex = null;
+    document.getElementById('success-screen').classList.remove('active');
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('leaves-container').innerHTML = '';
+    buildGrid();
+    updateProgress();
+    window.scrollTo(0, 0);
+  }
+
+  /* ═══════════════════════════════════
+     FALLING LEAVES
+  ═══════════════════════════════════ */
+  function spawnLeaves() {
+    const c = document.getElementById('leaves-container');
+    c.innerHTML = '';
+    const icons = ['🍃','🌿','🍀','🌱','🌾','🍂'];
+    for (var i = 0; i < 22; i++) {
+      const l = document.createElement('div');
+      l.className              = 'leaf';
+      l.textContent            = icons[i % icons.length];
+      l.style.left             = (Math.random() * 100) + 'vw';
+      l.style.fontSize         = (14 + Math.random() * 22) + 'px';
+      l.style.animationDuration= (4 + Math.random() * 6) + 's';
+      l.style.animationDelay   = (Math.random() * 5) + 's';
+      c.appendChild(l);
+    }
+  }
+
+  /* ═══════════════════════════════════
+     INIT
+  ═══════════════════════════════════ */
+  buildGrid();
+</script>
+</body>
+</html>
